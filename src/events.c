@@ -1,7 +1,7 @@
 
 #define _GNU_SOURCE
 #include <stdio.h>
-#define FUSE_USE_VERSION 25
+#define FUSE_USE_VERSION 26
 #include <fuse/fuse_lowlevel.h>
 #include <errno.h>
 #include <sys/statvfs.h>
@@ -27,7 +27,7 @@ extern tree_t* tree;
 
 static int event_count = 0;
 
-static void viewfs_init(void* userdata) {
+static void viewfs_init(void* userdata, struct fuse_conn_info *conn) {
    DEBUG_EVENTS("init");
 }
 
@@ -135,9 +135,11 @@ static void viewfs_readdir(fuse_req_t req, fuse_ino_t ino, size_t size, off_t of
          stbuf.st_ino = dir->children[off-2];
       }
       int len_name = strlen(name);
-      size_t ent_size = fuse_dirent_size(len_name);
+      
+      size_t ent_size = fuse_add_direntry(req, buf_off, left, name, &stbuf, ++off);
+      
       if (left >= ent_size) {
-         buf_off = fuse_add_dirent(buf_off, name, &stbuf, ++off);
+         buf_off += ent_size;
          left -= ent_size;
          free(name);
       } else {
@@ -157,7 +159,7 @@ static void viewfs_releasedir(fuse_req_t req, fuse_ino_t ino, struct fuse_file_i
    fuse_reply_err(req, 0);
 }
 
-static void viewfs_statfs(fuse_req_t req) {
+static void viewfs_statfs(fuse_req_t req, fuse_ino_t ino) {
    DEBUG_EVENTS("statfs");
    struct statvfs stbuf = {
       .f_bfree = 0
@@ -166,6 +168,7 @@ static void viewfs_statfs(fuse_req_t req) {
 }
 
 struct fuse_session* viewfs_session_new() {
+   struct fuse_args args = FUSE_ARGS_INIT(0, NULL);
    struct fuse_lowlevel_ops ops = {
       .init = viewfs_init,
       .destroy = viewfs_destroy,
@@ -197,5 +200,5 @@ struct fuse_session* viewfs_session_new() {
       .listxattr = NULL,
       .removexattr = NULL
    };
-   return fuse_lowlevel_new(NULL, &ops, sizeof(struct fuse_lowlevel_ops), NULL);
+   return fuse_lowlevel_new(&args, &ops, sizeof(struct fuse_lowlevel_ops), NULL);
 }

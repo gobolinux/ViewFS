@@ -4,7 +4,7 @@
 
 #include <db.h>
 #include <stdio.h>
-#define FUSE_USE_VERSION 25
+#define FUSE_USE_VERSION 26
 #include <fuse/fuse_lowlevel.h>
 #include <signal.h>
 #include <unistd.h>
@@ -15,6 +15,8 @@
 #include "watchdir.h"
 
 static struct fuse_session *session;
+
+static struct fuse_args args = FUSE_ARGS_INIT(0, NULL);
 
 tree_t* tree;
 
@@ -29,10 +31,9 @@ int main(int argc, char** argv) {
    int foreground;
    err = parse_cmdline(argc, argv, &watch_dir, &mountpoint, &foreground);
    if (err) goto quit;
-   int fd = fuse_mount(mountpoint, NULL);
-   if (fd == -1) goto quit;
+   struct fuse_chan* chan = fuse_mount(mountpoint, &args);
+   if (!chan) goto quit;
    session = viewfs_session_new();
-   struct fuse_chan* chan = fuse_kern_chan_new(fd);
    fuse_session_add_chan(session, chan);
    signal(SIGHUP, catch_signal);
    signal(SIGTERM, catch_signal);
@@ -44,10 +45,9 @@ int main(int argc, char** argv) {
    if (err) goto quit_unmount;
    fuse_session_loop(session);
    fuse_session_destroy(session);
-   close(fd);
    tree_close(tree);
 quit_unmount:
-   fuse_unmount(mountpoint);
+   fuse_unmount(mountpoint, chan);
    free(mountpoint);
    free(watch_dir);
 quit:
