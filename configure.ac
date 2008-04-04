@@ -1,0 +1,51 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.59)
+AC_INIT(ViewFS, 0.1, hisham@gobolinux.org)
+AC_CONFIG_SRCDIR([src/viewfs.c])
+AM_CONFIG_HEADER([config.h])
+AM_INIT_AUTOMAKE
+
+# Checks for programs.
+AC_PROG_CC
+
+# Checks for libraries.
+AC_CHECK_LIB([fuse], [fuse_reply_open], [], [missing_libraries="$missing_libraries libfuse"])
+AC_CHECK_LIB([db], [db_create], [], [missing_libraries="$missing_libraries libdb"])
+AC_CHECK_LIB([m], [ceil], [], [missing_libraries="$missing_libraries libm"])
+
+if test ! -z "$missing_libraries"; then
+  AC_MSG_ERROR([missing libraries: $missing_libraries])
+fi
+
+# Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_CHECK_HEADERS([limits.h stdint.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/time.h unistd.h],[:],[
+  missing_headers="$missing_headers $ac_header"
+])
+
+if test ! -z "$missing_headers"; then
+  AC_MSG_ERROR([missing headers: $missing_headers])
+fi
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_STDBOOL
+AC_C_CONST
+AC_C_INLINE
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+
+# Checks for library functions.
+AC_FUNC_CLOSEDIR_VOID
+AC_PROG_GCC_TRADITIONAL
+AC_FUNC_MALLOC
+AC_FUNC_MEMCMP
+AC_FUNC_REALLOC
+AC_TYPE_SIGNAL
+AC_FUNC_STAT
+AC_CHECK_FUNCS([gettimeofday memchr memmove memset mkdir putenv realpath regcomp strchr strdup strncasecmp strrchr strstr])
+
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

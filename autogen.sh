@@ -12,3 +12,4 @@ fi
 scripts/AllHeaders
 aclocal
 autoconf
+automake
