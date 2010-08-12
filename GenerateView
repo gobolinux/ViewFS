@@ -1,0 +1,17 @@
+#!/bin/sh
+
+for i in */*
+do
+	find $i/ -mindepth 1 -type d | while read line
+	do
+	   stripstore="/${line#*/*/}"
+	   echo "$stripstore:"
+	done
+	
+	find $i/ -mindepth 1 -type f -or -type l | while read line
+	do
+	   stripstore="/${line#*/*/}"
+	   echo "$stripstore:/Packages/$line"
+	done
+done
+
